@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "749217592759",
+    "project_id": "flutter-chatme",
+    "storage_bucket": "flutter-chatme.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:749217592759:android:a0ea5fc55d17616ada6432",
+        "android_client_info": {
+          "package_name": "com.example.chatme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "749217592759-j1r3659s57p8lsshv26ah19bumti3ep1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAchtcolc56dyziK7JyFXVAHLEu4ieFwp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "749217592759-j1r3659s57p8lsshv26ah19bumti3ep1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
