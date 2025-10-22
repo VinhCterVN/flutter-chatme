@@ -1,9 +1,11 @@
+import 'dart:ui';
+
 import 'package:chatme/ui/components/app_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../provider/riverpod_providers.dart';
+import '../../provider/auth_provider.dart';
 
 class AppLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -17,7 +19,7 @@ class AppLayout extends ConsumerStatefulWidget {
 class _AppLayoutState extends ConsumerState<AppLayout> {
   final routes = [
     {"name": "Home", "path": "/home", "icon": Icons.home_outlined, "active_icon": Icons.home},
-    {"name": "Chat", "path": "/chat", "icon": Icons.message_outlined, "active_icon": Icons.message},
+    {"name": "Contacts", "path": "/contacts", "icon": Icons.contacts_outlined, "active_icon": Icons.contacts},
     {"name": "Settings", "path": "/settings", "icon": Icons.settings_outlined, "active_icon": Icons.settings},
   ];
 
@@ -25,29 +27,38 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
   Widget build(BuildContext context) {
     final authService = ref.watch(authenticationServiceProvider);
     final currentLocation = GoRouterState.of(context).uri.toString();
-
+    final currentRouteName = GoRouterState.of(context).name;
     return Scaffold(
       appBar: AppBar(
         title: Container(
           margin: const EdgeInsets.only(left: 8.0),
-          child: AppLabel(label: "chatme...", fontSize: 36, color: Theme.of(context).colorScheme.onSecondaryContainer),
+          child: AppLabel(label: currentRouteName ?? "chatme...", fontSize: 36, color: Theme.of(context).colorScheme.onSecondaryContainer),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.notifications, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              // Handle notification action
+            onPressed: () async {
+              await authService.sendVerificationEmail();
             },
           ),
           IconButton(
             icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              authService.signOut();
-            },
+            onPressed: authService.signOut,
           ),
         ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
+          flexibleSpace: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(color: Theme.of(context).colorScheme.surface.withAlpha((250 * 65 / 100).toInt())),
+            ),
+          ),
+        bottomOpacity: 0.0,
       ),
-      body: widget.child,
+      extendBodyBehindAppBar: currentLocation != '/home',
       backgroundColor: Theme.of(context).colorScheme.surface,
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -68,6 +79,7 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
         selectedItemColor: Theme.of(context).colorScheme.onPrimaryContainer,
         enableFeedback: false,
       ),
+      body: widget.child,
     );
   }
 }

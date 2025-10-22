@@ -1,26 +1,32 @@
+import 'package:chatme/ui/components/edge_aware_glow_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Text('Welcome to SettingsPage!'),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(GoRouterState.of(context).uri.toString()), duration: Duration(seconds: 2)),
-              );
-            },
-            child: const Text('Start Setting'),
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 20,
+            children: <Widget>[
+              ...List.generate(
+                2,
+                (_) =>  EdgeAwareGlowImage(
+                  image: NetworkImage('https://picsum.photos/seed/picsum/1200/800'),
+                  size: Size(MediaQuery.of(context).size.width, 220),
+                  borderRadius: 0.0,
+                ),
+              ).expand((w) sync* {
+                yield w;
+                yield const SizedBox(height: 25);
+              }).toList()..removeLast(),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

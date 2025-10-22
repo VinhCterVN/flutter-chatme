@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthenticationService {
@@ -9,7 +12,8 @@ class AuthenticationService {
 
   Future<String?> signIn({required String email, required String password}) async {
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
+      await saveUserData(userCredential.user!);
       return null;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -29,8 +33,8 @@ class AuthenticationService {
         email: email,
         password: password,
       );
-      // Gửi email xác minh
       await userCredential.user?.sendEmailVerification();
+      await saveUserData(userCredential.user!);
       return null;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -67,7 +71,46 @@ class AuthenticationService {
     }
   }
 
+  Future<String?> sendVerificationEmail() async {
+    try {
+      User? user = _firebaseAuth.currentUser;
+      if (user == null) return 'No user is currently signed in.';
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+        log("Verification email sent to ${user.email}");
+        return null;
+      }
+      return 'Email is already verified.';
+    } catch (e) {
+      log("Error sending verification email: $e");
+      return e.toString();
+    }
+  }
+
+  Future<String?> saveUserData(User user) async {
+    try {
+      final userRef = FirebaseFirestore.instance.collection('users');
+      await userRef.doc(user.uid).set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName ?? '',
+        'photoUrl': user.photoURL ?? '',
+        'emailVerified': user.emailVerified,
+        'lastActive': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return null;
+    } catch (e) {
+      log("Error saving user data: $e");
+      return 'Failed to save user data: $e';
+    }
+  }
+
   Future<void> signOut() async {
+    await FirebaseFirestore.instance.collection('users').doc(_firebaseAuth.currentUser?.uid).update({
+      'lastActive': FieldValue.serverTimestamp(),
+    });
+
     await _firebaseAuth.signOut();
   }
 }

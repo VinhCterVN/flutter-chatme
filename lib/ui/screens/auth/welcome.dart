@@ -1,5 +1,5 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:chatme/provider/riverpod_providers.dart';
+import 'package:chatme/provider/auth_provider.dart';
 import 'package:chatme/ui/components/common_button.dart';
 import 'package:chatme/ui/components/my_text_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';

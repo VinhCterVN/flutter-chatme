@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:chatme/provider/riverpod_providers.dart';
+import 'package:chatme/provider/auth_provider.dart';
 import 'package:chatme/ui/components/app_label.dart';
 import 'package:chatme/ui/components/common_button.dart';
 import 'package:chatme/ui/components/my_text_field.dart';
