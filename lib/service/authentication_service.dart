@@ -62,6 +62,7 @@ class AuthenticationService {
       if (updatedUser?.displayName == displayName.trim()) {
         return null; // Success
       } else {
+        log("DisplayName update failed. Current displayName: ${updatedUser?.displayName}");
         return 'Failed to update displayName.';
       }
     } on FirebaseAuthException catch (e) {

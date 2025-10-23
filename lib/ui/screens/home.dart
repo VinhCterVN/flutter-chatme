@@ -12,38 +12,81 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-
   @override
   void initState() {
     super.initState();
-
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
 
-    return CustomScrollView(
-      slivers: [
-        SliverPersistentHeader(pinned: true, delegate: _SearchBarDelegate(onChanged: (value) => setState(() {}))),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => Container(
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              child: ListTile(
-                onTap: () {},
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
-                leading: CircleAvatar(
-                  backgroundImage: const AssetImage('assets/images/avatar.png') as ImageProvider,
-                  radius: 25,
+    return RefreshIndicator(
+      onRefresh: () async {
+        showAppSnackBar(context: context, message: "Refreshed!", duration: const Duration(seconds: 1));
+      },
+      color: Theme.of(context).colorScheme.primary,
+      child: CustomScrollView(
+        slivers: [
+          SliverPersistentHeader(pinned: true, delegate: _SearchBarDelegate(onChanged: (value) => setState(() {}))),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => Container(
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                child: ListTile(
+                  onTap: () {},
+                  onLongPress: () async {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      builder: (context) {
+                        return Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              ListTile(
+                                leading: const Icon(Icons.info_outline),
+                                title: const Text('View Profile'),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  showAppSnackBar(
+                                    context: context,
+                                    message: "View Profile tapped",
+                                    duration: const Duration(seconds: 1),
+                                  );
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.message_outlined),
+                                title: const Text('Send Message'),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  showAppSnackBar(
+                                    context: context,
+                                    message: "Send Message tapped",
+                                    duration: const Duration(seconds: 1),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(4.0))),
+                  leading: CircleAvatar(
+                    backgroundImage: Image.network("https://i.pravatar.cc/${100 + index}").image,
+                    radius: 25,
+                  ),
+                  title: Text("Handsome User"),
                 ),
-                title: Text("DumpSit"),
               ),
+              childCount: 100,
             ),
-            childCount: 100,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,35 +1,58 @@
 import '../../service/chat_service.dart';
 
 class Chat {
-  final String? id;
+  final String id;
   final ChatType type;
-  final String? groupName;
-  final List<Participant> participants;
-  final DateTime createdAt;
-  final String createdBy;
+  final List<String> participants;
+  List<ChatMember>? groupMembers;
+  final List<ChatMessage>? messages;
   final String? lastMsg;
   final DateTime? lastMsgTime;
-  final String? lastMsgId;
+  final String? groupName;
+  final DateTime createdAt;
 
   Chat({
+    required this.id,
     required this.type,
     required this.participants,
-    required this.createdAt,
-    required this.createdBy,
-    this.id,
-    this.groupName,
+    this.groupMembers,
+    this.messages,
     this.lastMsg,
-    this.lastMsgId,
     this.lastMsgTime,
+    this.groupName,
+    required this.createdAt,
   });
+
+  void setGroupMembers(List<ChatMember> members) {
+    if (type == ChatType.group) {
+      groupMembers = members;
+    }
+  }
 }
 
-class Participant {
+class GroupParticipant {
   final String userId;
   final Role role;
   final DateTime joinedAt;
 
-  Participant({required this.userId, required this.role, required this.joinedAt});
+  GroupParticipant({required this.userId, this.role = Role.member, required this.joinedAt});
+}
+
+class ChatMember {
+  final String userId;
+  final String displayName;
+  final String photoUrl;
+
+  ChatMember({required this.userId, required this.displayName, required this.photoUrl});
+}
+
+class ChatMessage {
+  final String id;
+  final String senderId;
+  final String content;
+  final DateTime? createdAt;
+
+  ChatMessage({required this.id, required this.senderId, required this.content, required this.createdAt});
 }
 
 enum Role { admin, member }

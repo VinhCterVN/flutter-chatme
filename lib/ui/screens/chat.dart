@@ -1,59 +1,24 @@
-import 'dart:developer';
 import 'dart:ui';
 
-import 'package:chatme/helper/snack_bar.dart';
-import 'package:chatme/provider/auth_provider.dart';
+import 'package:chatme/data/model/ui_state.dart';
+import 'package:chatme/provider/chat_provider.dart';
+import 'package:chatme/provider/user_provider.dart';
 import 'package:chatme/ui/components/chat_bar.dart';
+import 'package:chatme/ui/components/messages/sliver_messages_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../provider/chat_provider.dart';
+import '../../data/model/chat_model.dart';
+import '../../provider/auth_provider.dart';
+import '../../service/chat_service.dart';
 
 class ChatDetails extends ConsumerStatefulWidget {
-  final String? type;
-  final String? chatId;
+  final String roomId;
+  final String type;
   final ScrollController scrollController = ScrollController();
-  final List<String> messages = const [
-    "Hello, how are you?",
-    "I'm fine, thanks! And you?",
-    "Doing great, just working on a project.",
-    "That sounds interesting! What kind of project?",
-    "It's a chat application using Flutter and Firebase.",
-    "Wow, that sounds awesome! I love Flutter!",
-    "Me too! It's so flexible and powerful.",
-    "Absolutely! Have you tried using Riverpod for state management?",
-    "Yes, I have. It's really great for managing state in Flutter apps.",
-    "Hello, how are you?",
-    "I'm fine, thanks! And you?",
-    "Doing great, just working on a project.",
-    "That sounds interesting! What kind of project?",
-    "It's a chat application using Flutter and Firebase.",
-    "Wow, that sounds awesome! I love Flutter!",
-    "Me too! It's so flexible and powerful.",
-    "Absolutely! Have you tried using Riverpod for state management?",
-    "Yes, I have. It's really great for managing state in Flutter apps.",
-    "Hello, how are you?",
-    "I'm fine, thanks! And you?",
-    "Doing great, just working on a project.",
-    "That sounds interesting! What kind of project?",
-    "It's a chat application using Flutter and Firebase.",
-    "Wow, that sounds awesome! I love Flutter!",
-    "Me too! It's so flexible and powerful.",
-    "Absolutely! Have you tried using Riverpod for state management?",
-    "Yes, I have. It's really great for managing state in Flutter apps.",
-    "Hello, how are you?",
-    "I'm fine, thanks! And you?",
-    "Doing great, just working on a project.",
-    "That sounds interesting! What kind of project?",
-    "It's a chat application using Flutter and Firebase.",
-    "Wow, that sounds awesome! I love Flutter!",
-    "Me too! It's so flexible and powerful.",
-    "Absolutely! Have you tried using Riverpod for state management?",
-    "Yes, I have. It's really great for managing state in Flutter apps.",
-  ];
 
-  ChatDetails({super.key, required this.type, this.chatId});
+  ChatDetails({super.key, required this.type, required this.roomId});
 
   @override
   ConsumerState<ChatDetails> createState() => _ChatDetailsState();
@@ -62,48 +27,50 @@ class ChatDetails extends ConsumerStatefulWidget {
 class _ChatDetailsState extends ConsumerState<ChatDetails> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  Chat? _chat;
+  UIState _uiState = UIState.Loading;
 
   @override
   void initState() {
     super.initState();
+    fetchChatData(ref);
     _controller = TextEditingController();
     _focusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-      _focusNode.addListener(() {
-        if (_focusNode.hasFocus) {
-          log("Chat input focused");
-        } else {
-          log("Chat input unfocused");
-        }
-      });
-    });
   }
 
   @override
   void dispose() {
     super.dispose();
-    log("Chat disposed");
     _controller.dispose();
     _focusNode.dispose();
   }
 
-  void _scrollToBottom() {
-    if (widget.scrollController.hasClients) {
-      widget.scrollController.jumpTo(widget.scrollController.position.maxScrollExtent);
+  Future<void> fetchChatData(WidgetRef ref) async {
+    final chatService = ref.read(chatServiceProvider);
+    final userService = ref.read(userServiceProvider);
+    final res = await chatService.fetchRoomData(widget.roomId);
+
+    if (res is Chat) {
+      final users = await userService.getUsersByIds(res.participants);
+      setState(() {
+        _chat = res;
+        _chat?.groupMembers = users
+            .map((e) => (ChatMember(userId: e.uid, displayName: e.displayName, photoUrl: e.photoUrl)))
+            .toList();
+        _uiState = UIState.Ready;
+      });
+    } else {
+      setState(() => _uiState = UIState.Error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    _fetchChatData(ref.watch(currentUserProvider)?.uid ?? "");
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    final currentUser = ref.watch(currentUserProvider);
+    final chatService = ref.read(chatServiceProvider);
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () {},
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         endDrawer: Drawer(
@@ -125,7 +92,16 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
           title: ListTile(
             onTap: () {},
             leading: CircleAvatar(backgroundImage: AssetImage('assets/images/avatar.png') as ImageProvider),
-            title: Text("Opponent ", style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(switch (_uiState) {
+              UIState.Loading => "Loading...",
+              UIState.Error => "Error loading chat",
+              UIState.Ready =>
+                _chat != null
+                    ? (_chat!.type == ChatType.private
+                          ? _chat!.groupMembers!.firstWhere((e) => e.userId != currentUser!.uid).displayName
+                          : _chat!.groupName ?? "Group Chat")
+                    : "Unknown Chat",
+            }, style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
               "Last seen: ${DateTime.now().subtract(const Duration(minutes: 5)).toLocal().hour}",
               style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -157,46 +133,7 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
         body: Column(
           children: [
             Expanded(
-              child: ListView.builder(
-                controller: widget.scrollController,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-                itemCount: widget.messages.length,
-                itemBuilder: (context, index) {
-                  return Align(
-                    // TODO: Improve alignment logic for better UX
-                    alignment: index % 2 == 0 ? Alignment.centerLeft : Alignment.centerRight,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onDoubleTap: () {
-                        showAppSnackBar(
-                          context: context,
-                          message: "Message tapped: ${widget.messages[index]}",
-                          duration: const Duration(seconds: 2),
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.all(12),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                        decoration: BoxDecoration(
-                          color: index % 2 == 0
-                              ? Theme.of(context).colorScheme.primaryContainer
-                              : Theme.of(context).colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          widget.messages[index],
-                          style: TextStyle(
-                            color: index % 2 == 0
-                                ? Theme.of(context).colorScheme.onPrimaryContainer
-                                : Theme.of(context).colorScheme.onSecondaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: SliverMessagesView(roomId: widget.roomId, members : _chat?.groupMembers ?? []),
             ),
             SafeArea(
               top: false,
@@ -208,11 +145,8 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
                   controller: _controller,
                   focusNode: _focusNode,
                   onSendMessage: () {
-                    showAppSnackBar(
-                      context: context,
-                      message: "Message sent: ${_controller.text}",
-                      duration: const Duration(seconds: 2),
-                    );
+                    if (_controller.text.trim().isEmpty) return;
+                    chatService.sendMessage(widget.roomId, currentUser!.uid, _controller.text.trim());
                     _controller.clear();
                   },
                 ),
@@ -222,15 +156,5 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
         ),
       ),
     );
-  }
-
-  void _fetchChatData(String hostId) async {
-    final data = switch (widget.type) {
-      "group" => await ref.read(chatServiceProvider).getGroupChat(widget.chatId!),
-      "private" => await ref.read(chatServiceProvider).getPrivateChat(widget.chatId!, hostId),
-      _ => "Data error?",
-    };
-
-    log("Chat data fetched: $data");
   }
 }

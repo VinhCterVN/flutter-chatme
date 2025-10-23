@@ -17,9 +17,6 @@ class _ChatBarState extends ConsumerState<ChatBar> {
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(() {
-      FocusScope.of(context).unfocus();
-    });
   }
 
   @override

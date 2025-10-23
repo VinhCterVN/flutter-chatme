@@ -17,6 +17,7 @@ import '../ui/screens/contacts.dart';
 GoRouter createRouter(WidgetRef ref) {
   return GoRouter(
     initialLocation: '/login',
+    navigatorKey: GlobalKey<NavigatorState>(),
     redirect: (context, state) {
       final user = ref.watch(currentUserProvider);
       final path = state.uri.path;
@@ -24,36 +25,48 @@ GoRouter createRouter(WidgetRef ref) {
       log("User: $user");
 
       final isAuthRoute = path == '/login' || path == '/register';
-
       if (user == null) {
         return isAuthRoute ? null : '/login';
       } else {
         if (user.displayName == null) return '/welcome';
-        return isAuthRoute ? '/home' : null;
+        return isAuthRoute ? '/contacts' : null;
         // return isAuthRoute ? '/chat/:hwo' : null;
       }
     },
     routes: [
-      ShellRoute(
-        builder: (context, state, child) => AppLayout(child: child),
-        routes: [
-          GoRoute(name: 'HomePage', path: '/home', builder: (context, state) => const HomePage()),
-          GoRoute(name: 'ContactsPage', path: '/contacts', builder: (context, state) => ContactsPage()),
-          GoRoute(name: 'SettingsPage', path: '/settings', builder: (context, state) => const SettingsPage()),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return AppLayout(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/home', name: 'HomePage', builder: (context, state) => const HomePage())],
+          ),
+
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/contacts', name: 'ContactsPage', builder: (context, state) => ContactsPage())],
+          ),
+
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/settings', name: 'SettingsPage', builder: (context, state) => const SettingsPage()),
+            ],
+          ),
         ],
       ),
-      GoRoute(name: 'ChatDetails', path: '/chat/:type/:chatId',
-          builder: (context, state) => ChatDetails(
-            type: state.pathParameters['type'],
-            chatId: state.pathParameters['chatId'],
-          )),
+
+      GoRoute(
+        name: 'ChatDetails',
+        path: '/chat/:type/:roomId',
+        builder: (context, state) =>
+            ChatDetails(type: state.pathParameters['type']!, roomId: state.pathParameters['roomId']!),
+      ),
       GoRoute(name: 'LoginPage', path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(name: 'RegisterPage', path: '/register', builder: (context, state) => const RegisterScreen()),
       GoRoute(name: 'WelcomePage', path: '/welcome', builder: (_, _) => WelcomePage()),
       GoRoute(
         path: '/',
         builder: (_, _) => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        // builder: (_, _) => const WelcomePage(),
       ),
     ],
   );

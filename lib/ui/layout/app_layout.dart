@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../provider/auth_provider.dart';
+import '../components/app_drawer.dart';
 
 class AppLayout extends ConsumerStatefulWidget {
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  const AppLayout({super.key, required this.child});
+  const AppLayout({super.key, required this.navigationShell});
 
   @override
   ConsumerState<AppLayout> createState() => _AppLayoutState();
@@ -18,23 +19,30 @@ class AppLayout extends ConsumerStatefulWidget {
 
 class _AppLayoutState extends ConsumerState<AppLayout> {
   final routes = [
-    {"name": "Home", "path": "/home", "icon": Icons.home_outlined, "active_icon": Icons.home},
-    {"name": "Contacts", "path": "/contacts", "icon": Icons.contacts_outlined, "active_icon": Icons.contacts},
-    {"name": "Settings", "path": "/settings", "icon": Icons.settings_outlined, "active_icon": Icons.settings},
+    {"name": "Home", "icon": Icons.home_outlined, "active_icon": Icons.home},
+    {"name": "Contacts", "icon": Icons.contacts_outlined, "active_icon": Icons.contacts},
+    {"name": "Settings", "icon": Icons.settings_outlined, "active_icon": Icons.settings},
   ];
 
   @override
   Widget build(BuildContext context) {
     final authService = ref.watch(authenticationServiceProvider);
-    final currentLocation = GoRouterState.of(context).uri.toString();
-    final currentRouteName = GoRouterState.of(context).name;
+    final currentIndex = widget.navigationShell.currentIndex;
+
     return Scaffold(
       appBar: AppBar(
-        title: Container(
-          margin: const EdgeInsets.only(left: 8.0),
-          child: AppLabel(label: currentRouteName ?? "chatme...", fontSize: 36, color: Theme.of(context).colorScheme.onSecondaryContainer),
+        title: AppLabel(
+          label: routes[currentIndex]['name'] as String,
+          fontSize: 36,
+          color: Theme.of(context).colorScheme.onSecondaryContainer,
         ),
         actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.account_circle_rounded),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
           IconButton(
             icon: Icon(Icons.notifications, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () async {
@@ -46,40 +54,36 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
             onPressed: authService.signOut,
           ),
         ],
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          surfaceTintColor: Colors.transparent,
-          flexibleSpace: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(color: Theme.of(context).colorScheme.surface.withAlpha((250 * 65 / 100).toInt())),
-            ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Theme.of(context).colorScheme.surface.withAlpha((250 * 65 / 100).toInt())),
           ),
-        bottomOpacity: 0.0,
+        ),
       ),
-      extendBodyBehindAppBar: currentLocation != '/home',
+      endDrawer: const AppDrawer(),
+      drawerEnableOpenDragGesture: true,
+      extendBodyBehindAppBar: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
+      body: widget.navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        currentIndex: routes.indexWhere((route) => route['path'] == currentLocation),
+        currentIndex: currentIndex,
         onTap: (int index) {
-          final route = routes[index];
-          context.go(route['path'] as String);
+          widget.navigationShell.goBranch(index, initialLocation: false);
         },
         items: routes.map((route) {
           return BottomNavigationBarItem(
-            key: Key(route['path'] as String),
             icon: Icon(route['icon'] as IconData),
             activeIcon: Icon(route['active_icon'] as IconData),
             label: route['name'] as String,
-            tooltip: route['name'] as String,
           );
         }).toList(),
-        selectedItemColor: Theme.of(context).colorScheme.onPrimaryContainer,
-        enableFeedback: false,
       ),
-      body: widget.child,
     );
   }
 }
