@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:chatme/data/model/chat_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 enum ChatType { private, group }
 
@@ -12,15 +13,23 @@ class ChatService {
 
   ChatService(this._firestore);
 
-  Future<dynamic> getChatList() async {
-    try {
-      final snapshot = await _firestore.collection('chats').orderBy('lastMsgTime', descending: true).get();
-
-      return snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList();
-    } catch (e) {
-      log('Error fetching chat list: $e');
-      return "Error fetching chat list: ${e.toString()}";
-    }
+  Stream<List<Chat>> streamChatList() {
+    return _firestore.collection('chats')
+        .where('participants', arrayContains: FirebaseAuth.instance.currentUser!.uid)
+        .orderBy('lastMsgTime', descending: true).snapshots().map((snapshot) {
+      return snapshot.docs.map((d) {
+        final data = d.data();
+        return Chat(
+          id: d.id,
+          type: data['type'] == ChatType.private.name ? ChatType.private : ChatType.group,
+          participants: List<String>.from(data['participants'] as List<dynamic>),
+          groupName: data['groupName'] as String?,
+          lastMsg: data['lastMsg'] as String?,
+          lastMsgTime: data['lastMsgTime'] as Timestamp?,
+          createdAt: data['createdAt'] as Timestamp,
+        );
+      }).toList();
+    });
   }
 
   Future<dynamic> getOrCreatePrivate({required String uuidA, required String uuidB}) async {
@@ -42,7 +51,7 @@ class ChatService {
         id: chatDoc.id,
         type: ChatType.private,
         participants: List<String>.from(chatData['participants'] as List<dynamic>),
-        createdAt: (chatData['createdAt'] as Timestamp).toDate(),
+        createdAt: chatData['createdAt'] as Timestamp,
       );
     } catch (e) {
       log('Error in getOrCreatePrivate: $e');
@@ -61,7 +70,7 @@ class ChatService {
         id: doc.id,
         type: chatData['type'] == ChatType.private.name ? ChatType.private : ChatType.group,
         participants: List<String>.from(chatData['participants'] as List<dynamic>),
-        createdAt: (chatData['createdAt'] as Timestamp).toDate(),
+        createdAt: chatData['createdAt'] as Timestamp,
       );
     } catch (e) {
       log('Error fetching room data: $e');
@@ -101,10 +110,7 @@ class ChatService {
         'content': content,
         'timestamp': timestamp,
       });
-      await _firestore.collection('chats').doc(roomId).update({
-        'lastMsg': content,
-        'lastMsgTime': timestamp,
-      });
+      await _firestore.collection('chats').doc(roomId).update({'lastMsg': content, 'lastMsgTime': timestamp});
     } catch (e) {
       log('Error sending message: $e');
     }

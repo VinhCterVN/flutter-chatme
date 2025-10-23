@@ -7,21 +7,21 @@ class Chat {
   final ChatType type;
   final List<String> participants;
   List<ChatMember>? groupMembers;
-  final List<ChatMessage>? messages;
   final String? lastMsg;
-  final DateTime? lastMsgTime;
+  final Timestamp? lastMsgTime;
   final String? groupName;
-  final DateTime createdAt;
+  final String? groupAvatarUrl;
+  final Timestamp createdAt;
 
   Chat({
     required this.id,
     required this.type,
     required this.participants,
     this.groupMembers,
-    this.messages,
     this.lastMsg,
     this.lastMsgTime,
     this.groupName,
+    this.groupAvatarUrl,
     required this.createdAt,
   });
 

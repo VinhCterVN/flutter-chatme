@@ -179,7 +179,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                           ),
                         ),
 
-                        if (last)
+                        if (last && index != 0)
                           Align(
                             alignment: AlignmentGeometry.center,
                             child: Text(

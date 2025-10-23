@@ -29,7 +29,7 @@ GoRouter createRouter(WidgetRef ref) {
         return isAuthRoute ? null : '/login';
       } else {
         if (user.displayName == null) return '/welcome';
-        return isAuthRoute ? '/contacts' : null;
+        return isAuthRoute ? '/home' : null;
         // return isAuthRoute ? '/chat/:hwo' : null;
       }
     },

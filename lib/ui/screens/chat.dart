@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:chatme/data/model/ui_state.dart';
 import 'package:chatme/provider/chat_provider.dart';
 import 'package:chatme/provider/user_provider.dart';
-import 'package:chatme/ui/components/chat_bar.dart';
+import 'package:chatme/ui/components/chats/chat_bar.dart';
 import 'package:chatme/ui/components/messages/sliver_messages_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

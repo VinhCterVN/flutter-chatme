@@ -1,6 +1,14 @@
+import 'dart:async';
+import 'dart:developer';
+
 import 'package:chatme/helper/snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../data/model/chat_model.dart';
+import '../../provider/chat_provider.dart';
+import '../../service/chat_service.dart';
+import '../components/list/chat_tile.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -10,9 +18,29 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  late final ScrollController _scrollController;
+
+  List<Chat> _chats = [];
+  StreamSubscription<List<Chat>>? _sub;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+
+    final chatService = ref.read(chatServiceProvider);
+    _sub = chatService.streamChatList().listen((newChats) {
+      setState(() => _chats = newChats);
+    });
+
+    log("ChatList size: ${_chats.length}");
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -24,62 +52,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       color: Theme.of(context).colorScheme.primary,
       child: CustomScrollView(
         slivers: [
-          SliverPersistentHeader(pinned: true, delegate: _SearchBarDelegate(onChanged: (value) => setState(() {}))),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SearchBarDelegate(onChanged: (value) => setState(() {}), chats: _chats),
+          ),
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => Container(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final chat = _chats[index];
+
+              return Container(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ListTile(
-                  onTap: () {},
-                  onLongPress: () async {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      builder: (context) {
-                        return Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              ListTile(
-                                leading: const Icon(Icons.info_outline),
-                                title: const Text('View Profile'),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  showAppSnackBar(
-                                    context: context,
-                                    message: "View Profile tapped",
-                                    duration: const Duration(seconds: 1),
-                                  );
-                                },
-                              ),
-                              ListTile(
-                                leading: const Icon(Icons.message_outlined),
-                                title: const Text('Send Message'),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  showAppSnackBar(
-                                    context: context,
-                                    message: "Send Message tapped",
-                                    duration: const Duration(seconds: 1),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(4.0))),
-                  leading: CircleAvatar(
-                    backgroundImage: Image.network("https://i.pravatar.cc/${100 + index}").image,
-                    radius: 25,
-                  ),
-                  title: Text("Handsome User"),
-                ),
-              ),
-              childCount: 100,
-            ),
+                child: ChatTile(chat: chat, index: index),
+              );
+            }, childCount: _chats.length),
           ),
         ],
       ),
@@ -89,15 +74,17 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   final ValueChanged<String> onChanged;
+  final List<Chat> chats;
 
-  _SearchBarDelegate({required this.onChanged});
+  _SearchBarDelegate({required this.onChanged, required this.chats});
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      key: const Key('search_bar'),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: SearchAnchor(
+        isFullScreen: true,
+        viewShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
         builder: (BuildContext context, SearchController controller) {
           return SearchBar(
             controller: controller,
@@ -106,33 +93,29 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
             padding: const WidgetStatePropertyAll<EdgeInsets>(EdgeInsets.symmetric(horizontal: 16.0)),
             onTap: controller.openView,
             onChanged: (_) => controller.openView(),
-            onSubmitted: (val) {
-              showAppSnackBar(
-                context: context,
-                message: "Search submitted: $val",
-                duration: const Duration(seconds: 2),
-              );
-            },
           );
         },
-        viewShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
-        // viewBackgroundColor: Theme.of(context).colorScheme.surfaceDim,
-        suggestionsBuilder: (BuildContext context, SearchController controller) =>
-            List<ListTile>.generate(5, (int index) {
-              final String item = 'item $index';
-              return ListTile(title: Text(item), style: ListTileStyle.list);
-            }),
-        isFullScreen: true,
+        suggestionsBuilder: (BuildContext context, SearchController controller) {
+          final query = controller.text.toLowerCase();
+          final filtered = chats.where((chat) {
+            final name = chat.groupName ?? (chat.type == ChatType.group ? "Group Chat" : "Private Chat");
+            return name.toLowerCase().contains(query);
+          }).toList();
+
+          return filtered.map((chat) => ChatTile(chat: chat, index: chats.indexOf(chat))).toList();
+        },
       ),
     );
   }
 
   @override
-  double get maxExtent => 65.0;
+  double get maxExtent => 56.0;
 
   @override
-  double get minExtent => 65.0;
+  double get minExtent => 56.0;
 
   @override
-  bool shouldRebuild(_SearchBarDelegate oldDelegate) => false;
+  bool shouldRebuild(_SearchBarDelegate oldDelegate) {
+    return chats != oldDelegate.chats;
+  }
 }
