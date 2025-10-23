@@ -200,7 +200,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> with SingleTickerProv
                                         final result = await authService.updateUserDisplayName(
                                           _textController.text.trim(),
                                         );
-                                        if (!mounted) return;
+                                        if (!context.mounted) return;
                                         if (result == null) {
                                           ref.read(currentUserProvider.notifier).state =
                                               FirebaseAuth.instance.currentUser;

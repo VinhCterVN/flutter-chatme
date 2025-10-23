@@ -84,7 +84,7 @@ class ChatService {
           id: d.id,
           senderId: data['senderId'],
           content: data['content'],
-          createdAt: (data['createdAt'] as DateTime?),
+          timestamp: (data['createdAt'] as Timestamp),
         );
       }).toList();
     } catch (e) {
@@ -124,7 +124,7 @@ class ChatService {
               id: doc.id,
               senderId: data['senderId'] as String,
               content: data['content'] as String,
-              createdAt: (data['createdAt'] as DateTime?),
+              timestamp: (data['timestamp'] as Timestamp),
             );
           }).toList();
         });

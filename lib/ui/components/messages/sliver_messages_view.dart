@@ -21,15 +21,16 @@ class SliverMessagesView extends ConsumerStatefulWidget {
 
 class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
   final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
+  late final ScrollController _scrollController;
   List<ChatMessage> _messages = [];
-  UIState _uiState = UIState.Loading;
+  UIState _uiState = UIState.loading;
   StreamSubscription<List<ChatMessage>>? _sub;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     final chatService = ref.read(chatServiceProvider);
-
     _sub = chatService.streamMessages(widget.roomId).listen((newMsgs) {
       if (newMsgs.length > _messages.length) {
         final diff = newMsgs.length - _messages.length;
@@ -41,14 +42,63 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
         setState(() => _messages = newMsgs);
       }
     });
-    Future.delayed(const Duration(seconds: 2), () => setState(() => _uiState = UIState.Ready)
-    );
+    Future.delayed(const Duration(seconds: 1), () => setState(() => _uiState = UIState.ready));
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  bool _isFirstInGroup(int index) {
+    if (index == _messages.length - 1) return true;
+
+    final current = _messages[index];
+    final next = _messages[index + 1];
+
+    final currentTime = current.timestamp.toDate();
+    final nextTime = next.timestamp.toDate();
+
+    return current.senderId != next.senderId || currentTime.difference(nextTime).inMinutes > 5;
+  }
+
+  bool _isLastInGroup(int index) {
+    if (index == 0) return true;
+
+    final current = _messages[index];
+    final prev = _messages[index - 1];
+
+    final currentTime = current.timestamp.toDate();
+    final prevTime = prev.timestamp.toDate();
+
+    return current.senderId != prev.senderId || prevTime.difference(currentTime).inMinutes > 5;
+  }
+
+  String _formatMessageTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+    final isToday = now.day == time.day && now.month == time.month && now.year == time.year;
+    final isYesterday =
+        now.subtract(const Duration(days: 1)).day == time.day &&
+        now.subtract(const Duration(days: 1)).month == time.month &&
+        now.subtract(const Duration(days: 1)).year == time.year;
+    final isThisYear = now.year == time.year;
+
+    if (isToday) {
+      return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    } else if (isYesterday) {
+      return "Yesterday, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    } else if (difference.inDays < 7) {
+      const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      final weekday = weekdays[time.weekday % 7];
+      return "$weekday, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    } else if (isThisYear) {
+      return "${time.day}/${time.month}, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    } else {
+      return "${time.day}/${time.month}/${time.year}, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    }
   }
 
   @override
@@ -56,9 +106,9 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
     final currentUser = ref.watch(currentUserProvider);
 
     return switch (_uiState) {
-      UIState.Loading => const Center(child: CircularProgressIndicator()),
-      UIState.Error => const Text('Error loading messages.'),
-      UIState.Ready => CustomScrollView(
+      UIState.loading => const Center(child: CircularProgressIndicator()),
+      UIState.error => const Text('Error loading messages.'),
+      UIState.ready => CustomScrollView(
         reverse: true,
         slivers: [
           if (_messages.isEmpty)
@@ -80,33 +130,67 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
               itemBuilder: (context, index, animation) {
                 final msg = _messages[index];
                 final isMine = msg.senderId == currentUser!.uid;
+                final first = _isFirstInGroup(index);
+                final last = _isLastInGroup(index);
 
                 return SizeTransition(
                   sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
                   axisAlignment: -1.0,
                   child: FadeTransition(
                     opacity: animation,
-                    child: Align(
-                      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.all(12),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                        decoration: BoxDecoration(
-                          color: !isMine
-                              ? Theme.of(context).colorScheme.primaryContainer
-                              : Theme.of(context).colorScheme.surfaceBright,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          msg.content,
-                          style: TextStyle(
-                            color: !isMine
-                                ? Theme.of(context).colorScheme.onPrimaryContainer
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                    child: Column(
+                      crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        if (first) const SizedBox(height: 8),
+
+                        Align(
+                          alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            margin: EdgeInsets.only(left: 6, right: 6, top: first ? 2 : 1, bottom: last ? 4 : 1),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                            decoration: BoxDecoration(
+                              color: isMine
+                                  ? Theme.of(context).colorScheme.secondaryContainer
+                                  : Theme.of(context).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(isMine ? 18 : (first ? 18 : 6)),
+                                topRight: Radius.circular(isMine ? (first ? 18 : 6) : 18),
+                                bottomLeft: Radius.circular(isMine ? 18 : (last ? 18 : 6)),
+                                bottomRight: Radius.circular(isMine ? (last ? 18 : 6) : 18),
+                              ),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 4, offset: const Offset(0, 2)),
+                              ],
+                            ),
+                            child: Text(
+                              msg.content,
+                              textHeightBehavior: const TextHeightBehavior(
+                                applyHeightToFirstAscent: false,
+                                applyHeightToLastDescent: false,
+                              ),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: isMine
+                                    ? Theme.of(context).colorScheme.onSecondaryContainer
+                                    : Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+
+                        if (last)
+                          Align(
+                            alignment: AlignmentGeometry.center,
+                            child: Text(
+                              _formatMessageTime(msg.timestamp.toDate()),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -138,6 +222,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                 ),
               ),
             ),
+            SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ],
       ),

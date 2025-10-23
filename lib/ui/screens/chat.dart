@@ -28,7 +28,7 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   Chat? _chat;
-  UIState _uiState = UIState.Loading;
+  UIState _uiState = UIState.loading;
 
   @override
   void initState() {
@@ -57,10 +57,10 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
         _chat?.groupMembers = users
             .map((e) => (ChatMember(userId: e.uid, displayName: e.displayName, photoUrl: e.photoUrl)))
             .toList();
-        _uiState = UIState.Ready;
+        _uiState = UIState.ready;
       });
     } else {
-      setState(() => _uiState = UIState.Error);
+      setState(() => _uiState = UIState.error);
     }
   }
 
@@ -93,9 +93,9 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
             onTap: () {},
             leading: CircleAvatar(backgroundImage: AssetImage('assets/images/avatar.png') as ImageProvider),
             title: Text(switch (_uiState) {
-              UIState.Loading => "Loading...",
-              UIState.Error => "Error loading chat",
-              UIState.Ready =>
+              UIState.loading => "Loading...",
+              UIState.error => "Error loading chat",
+              UIState.ready =>
                 _chat != null
                     ? (_chat!.type == ChatType.private
                           ? _chat!.groupMembers!.firstWhere((e) => e.userId != currentUser!.uid).displayName

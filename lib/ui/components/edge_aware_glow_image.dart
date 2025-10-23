@@ -22,7 +22,7 @@ class _EdgeAwareGlowImageState extends State<EdgeAwareGlowImage> {
   Future<void> _computePalette() async {
     final w = widget.size.width;
     final h = widget.size.height;
-    final edge = 0.06;
+    final _ = 0.06;
 
     final palette = await PaletteGenerator.fromImageProvider(
       widget.image,

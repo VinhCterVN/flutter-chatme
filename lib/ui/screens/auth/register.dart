@@ -127,14 +127,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             mainAxisAlignment: _emailValidated ? MainAxisAlignment.spaceBetween : MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              if (_emailValidated) IconButton(onPressed: () {
-                                setState(() {
-                                  _emailValidated = !_emailValidated;
-                                });
+                              if (_emailValidated)
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _emailValidated = !_emailValidated;
+                                    });
 
-                                _pswController.clear();
-                                _pswConfirmController.clear();
-                              }, icon: Icon(Icons.chevron_left)),
+                                    _pswController.clear();
+                                    _pswConfirmController.clear();
+                                  },
+                                  icon: Icon(Icons.chevron_left),
+                                ),
                               TextButton(
                                 onPressed: () {},
                                 child: const Text("Forgot Password?", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -152,7 +156,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 return;
                               }
 
-                              if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(_mailController.text)) {
+                              if (!RegExp(
+                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                              ).hasMatch(_mailController.text)) {
                                 showAppSnackBar(context: context, message: "Please enter a valid email address.");
                                 return;
                               }
@@ -182,8 +188,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   password: _pswController.text,
                                 );
 
-                                if (!mounted) return;
-                                if (result != null && mounted) showAppSnackBar(context: context, message: result);
+                                if (result == null || !context.mounted) return;
+                                showAppSnackBar(context: context, message: result);
                               } catch (e) {
                                 showAppSnackBar(context: context, message: e.toString());
                               } finally {

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../service/chat_service.dart';
 
 class Chat {
@@ -50,9 +52,9 @@ class ChatMessage {
   final String id;
   final String senderId;
   final String content;
-  final DateTime? createdAt;
+  final Timestamp timestamp;
 
-  ChatMessage({required this.id, required this.senderId, required this.content, required this.createdAt});
+  ChatMessage({required this.id, required this.senderId, required this.content, required this.timestamp});
 }
 
 enum Role { admin, member }

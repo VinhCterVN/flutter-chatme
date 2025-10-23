@@ -1,3 +1,3 @@
 enum UIState {
-  Ready, Loading, Error
+  ready, loading, error
 }

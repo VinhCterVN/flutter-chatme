@@ -53,6 +53,7 @@ class ContactsPage extends ConsumerWidget {
                               uuidA: currentUser!.uid,
                               uuidB: user['uid'],
                             );
+                            if (!context.mounted) return;
                             context.pushNamed(
                               'ChatDetails',
                               pathParameters: {'type': ChatType.private.name, 'roomId': chat.id},

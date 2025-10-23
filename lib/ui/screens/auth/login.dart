@@ -29,7 +29,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final authService = ref.watch(authenticationServiceProvider);
 
@@ -112,7 +111,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   password: _pswController.text,
                                 );
 
-                                if (result != null && mounted) showAppSnackBar(context: context, message: result, action: SnackBarAction(label: "Hide", onPressed: () {}));
+                                if (result == null || !context.mounted) return;
+                                showAppSnackBar(
+                                  context: context,
+                                  message: result,
+                                  action: SnackBarAction(label: "Hide", onPressed: () {}),
+                                );
                               } finally {
                                 _toggleLoading();
                               }

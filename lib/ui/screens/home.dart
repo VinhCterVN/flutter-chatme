@@ -2,8 +2,6 @@ import 'package:chatme/helper/snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../provider/auth_provider.dart';
-
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -19,8 +17,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-
     return RefreshIndicator(
       onRefresh: () async {
         showAppSnackBar(context: context, message: "Refreshed!", duration: const Duration(seconds: 1));
