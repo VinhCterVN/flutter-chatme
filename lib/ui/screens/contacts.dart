@@ -2,18 +2,13 @@ import 'package:chatme/data/model/chat_model.dart';
 import 'package:chatme/provider/auth_provider.dart';
 import 'package:chatme/provider/chat_provider.dart';
 import 'package:chatme/provider/user_provider.dart';
-import 'package:chatme/service/api_service.dart';
 import 'package:chatme/service/chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class ContactsPage extends ConsumerWidget {
-  final apiService = ApiService();
-
-  ContactsPage({super.key});
-
-  Future<dynamic> fetchUsers() async => apiService.get();
+  const ContactsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

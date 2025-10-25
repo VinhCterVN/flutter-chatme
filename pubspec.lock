@@ -209,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dbus:
+    dependency: transitive
+    description:
+      name: dbus
+      sha256: "79e0c23480ff85dc68de79e2cd6334add97e48f7f4865d17686dd6ea81a47e8c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.11"
   fake_async:
     dependency: transitive
     description:
@@ -281,6 +289,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  firebase_in_app_messaging:
+    dependency: "direct main"
+    description:
+      name: firebase_in_app_messaging
+      sha256: "6e1dbdeb3ee34dfb7a286b1cd3048ed47bb7bd721e9506ddc9ce2e84b134cabb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.0+3"
+  firebase_in_app_messaging_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_in_app_messaging_platform_interface
+      sha256: "99120f62141f92addd29f8431fb467e6b2f4b32b2217b8815e133ed73e39cdff"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.5+14"
   firebase_messaging:
     dependency: "direct main"
     description:
@@ -334,6 +358,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_local_notifications:
+    dependency: "direct main"
+    description:
+      name: flutter_local_notifications
+      sha256: "19ffb0a8bb7407875555e5e98d7343a633bb73707bae6c6a5f37c90014077875"
+      url: "https://pub.dev"
+    source: hosted
+    version: "19.5.0"
+  flutter_local_notifications_linux:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_linux
+      sha256: e3c277b2daab8e36ac5a6820536668d07e83851aeeb79c446e525a70710770a5
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
+  flutter_local_notifications_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_platform_interface
+      sha256: "277d25d960c15674ce78ca97f57d0bae2ee401c844b6ac80fcd972a9c99d09fe"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.1.0"
+  flutter_local_notifications_windows:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_windows
+      sha256: "8d658f0d367c48bd420e7cf2d26655e2d1130147bca1eea917e576ca76668aaf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -560,14 +616,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  palette_generator:
-    dependency: "direct main"
-    description:
-      name: palette_generator
-      sha256: "4420f7ccc3f0a4a906144e73f8b6267cd940b64f57a7262e95cb8cec3a8ae0ed"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.3+7"
   path:
     dependency: transitive
     description:
@@ -957,6 +1005,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.11"
+  timezone:
+    dependency: transitive
+    description:
+      name: timezone
+      sha256: dd14a3b83cfd7cb19e7888f1cbc20f258b8d71b54c06f79ac585f14093a287d1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.1"
   typed_data:
     dependency: transitive
     description:

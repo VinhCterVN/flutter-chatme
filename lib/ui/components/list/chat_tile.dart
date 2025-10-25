@@ -44,9 +44,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
         isScrollControlled: true,
         showDragHandle: true,
         barrierColor: Colors.black54,
-        builder: (context) {
-          return const ChatTileSheet();
-        },
+        builder: (context) => const ChatTileSheet()
       ),
       leading: CircleAvatar(
         backgroundImage: CachedNetworkImageProvider(

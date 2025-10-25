@@ -23,14 +23,14 @@ dependencies:
 #  Firebase
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.0
-
+  firebase_messaging: ^16.0.3
+  firebase_in_app_messaging: ^0.9.0+3
   cloud_firestore: ^6.0.0
 
 #  Lottie
   lottie: ^3.3.1
   animated_text_kit: ^4.2.3
   shadex: ^1.0.2
-  palette_generator: ^0.3.3+7
   shimmer: ^3.0.0
 
 #  Crypto
@@ -42,7 +42,7 @@ dependencies:
   cloudinary_url_gen: ^1.0.0
   cloudinary_api: ^1.0.0
   cached_network_image: ^3.4.1
-  firebase_messaging: ^16.0.3
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:

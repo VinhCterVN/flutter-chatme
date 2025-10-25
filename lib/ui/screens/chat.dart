@@ -29,7 +29,7 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
   late final FocusNode _focusNode;
   Chat? _chat;
   UIState _uiState = UIState.loading;
-  double _translateX = 0.0;
+  final ValueNotifier<double> _translateX = ValueNotifier(0.0);
   Offset? _startOffset;
 
   @override
@@ -42,9 +42,10 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
 
   @override
   void dispose() {
-    super.dispose();
+    _translateX.dispose();
     _controller.dispose();
     _focusNode.dispose();
+    super.dispose();
   }
 
   Future<void> fetchChatData(WidgetRef ref) async {
@@ -74,7 +75,7 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
     return GestureDetector(
       onHorizontalDragStart: (details) {
         final screenWidth = MediaQuery.of(context).size.width;
-        if (details.globalPosition.dx < screenWidth * 0.25) {
+        if (details.globalPosition.dx < screenWidth * 0.5) {
           _startOffset = details.globalPosition;
         } else {
           _startOffset = null;
@@ -84,19 +85,24 @@ class _ChatDetailsState extends ConsumerState<ChatDetails> {
         if (_startOffset == null) return;
         final delta = details.globalPosition.dx - _startOffset!.dx;
         if (delta > 0) {
-          setState(() => _translateX = delta.clamp(0, 200));
+          _translateX.value = delta.clamp(0, 200);
         }
       },
       onHorizontalDragEnd: (_) {
-        if (_translateX > 100) {
+        if (_translateX.value > 100) {
           context.pop();
           return;
         }
-        setState(() => _translateX = 0);
+        _translateX.value = 0;
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        transform: Matrix4.translationValues(_translateX, 0, 0),
+      child: ValueListenableBuilder<double>(
+        valueListenable: _translateX,
+        builder: (context, translateValue, child) {
+          return Transform.translate(
+            offset: Offset(translateValue, 0),
+            child: child,
+          );
+        },
         child: Scaffold(
           resizeToAvoidBottomInset: true,
           endDrawer: Drawer(

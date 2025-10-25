@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:chatme/helper/snack_bar.dart';
 import 'package:chatme/ui/components/home/notes_carousel.dart';
@@ -34,8 +33,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     _sub = chatService.streamChatList(ref).listen((newChats) {
       setState(() => _chats = newChats);
     });
-
-    log("ChatList size: ${_chats.length}");
   }
 
   @override

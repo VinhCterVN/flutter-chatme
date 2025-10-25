@@ -68,7 +68,7 @@ GoRouter createRouter(WidgetRef ref) {
                     roomId: state.pathParameters['roomId']!,
                     title: state.pathParameters['title']!,
                   ),
-                  transitionDuration: const Duration(milliseconds: 300),
+                  transitionDuration: const Duration(milliseconds: 500),
                   transitionsBuilder: (context, animation, secondAnimation, child) {
                     final tween = Tween(begin: const Offset(1, 0), end: Offset.zero).chain(
                         CurveTween(curve: Curves.easeOut));

@@ -10,11 +10,11 @@ class StoryCarousel extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 200),
       child: CarouselView.weighted(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 3),
         flexWeights: const <int>[1, 4, 2, 1],
         elevation: 2,
         itemSnapping: true,
-        consumeMaxWeight: false,
+        consumeMaxWeight: true,
         children: List<Widget>.generate(40, (index) {
           return Stack(
             children: [
