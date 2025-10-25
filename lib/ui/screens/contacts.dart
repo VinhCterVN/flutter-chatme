@@ -56,7 +56,11 @@ class ContactsPage extends ConsumerWidget {
                             if (!context.mounted) return;
                             context.pushNamed(
                               'ChatDetails',
-                              pathParameters: {'type': ChatType.private.name, 'roomId': chat.id},
+                              pathParameters: {
+                                'type': ChatType.private.name,
+                                'roomId': chat.id,
+                                'title': user['displayName'] ?? 'Chat',
+                              },
                             );
                           },
                           leading: CircleAvatar(
@@ -64,7 +68,13 @@ class ContactsPage extends ConsumerWidget {
                                 ? NetworkImage(user['photoUrl'])
                                 : const AssetImage('assets/images/avatar.png') as ImageProvider,
                           ),
-                          title: Text(user['displayName'] ?? 'Unnamed'),
+                          title: Text(
+                            user['displayName'] ?? 'Unnamed',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(4.0))),
                         );
                       },

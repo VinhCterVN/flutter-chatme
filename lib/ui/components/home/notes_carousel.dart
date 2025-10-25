@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatme/ui/components/common/shimmer_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scale_button/scale_button.dart';
@@ -23,7 +25,7 @@ class _NotesCarouselState extends ConsumerState<NotesCarousel> {
                 width: 65,
                 height: 65,
                 margin: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.withOpacity(0.3)),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.withAlpha((0.3 * 255).toInt())),
                 child: Icon(Icons.add, size: 30),
               ),
             ),
@@ -51,12 +53,17 @@ class _NotesCarouselState extends ConsumerState<NotesCarousel> {
                         color: Theme.of(context).colorScheme.surfaceDim,
                         shape: BoxShape.circle,
                       ),
-                      child: Image.network(("https://i.pravatar.cc/150?img=${index + 1}"), fit: BoxFit.contain),
+                      child: CachedNetworkImage(
+                        imageUrl: "https://i.pravatar.cc/150?img=${index + 1}",
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => ShimmerBox(),
+                        errorWidget: (context, url, error) => Icon(Icons.error),
+                      ),
                     ),
                   ),
                 ),
               ),
-              childCount: 20,
+              childCount: 40,
             ),
           ),
         ],

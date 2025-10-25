@@ -2,7 +2,6 @@ import 'dart:developer';
 
 import 'package:chatme/ui/screens/auth/register.dart';
 import 'package:chatme/ui/screens/auth/welcome.dart';
-import 'package:chatme/ui/screens/chat.dart';
 import 'package:chatme/ui/screens/home.dart';
 import 'package:chatme/ui/screens/settings.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../provider/auth_provider.dart';
 import '../ui/layout/app_layout.dart';
 import '../ui/screens/auth/login.dart';
+import '../ui/screens/chat.dart';
 import '../ui/screens/contacts.dart';
 
 GoRouter createRouter(WidgetRef ref) {
@@ -56,10 +56,28 @@ GoRouter createRouter(WidgetRef ref) {
       ),
 
       GoRoute(
-        name: 'ChatDetails',
-        path: '/chat/:type/:roomId',
-        builder: (context, state) =>
-            ChatDetails(type: state.pathParameters['type']!, roomId: state.pathParameters['roomId']!),
+          name: 'ChatDetails',
+          path: '/chat/:type/:roomId/:title',
+          pageBuilder: (context, state) =>
+              CustomTransitionPage(
+                  key: state.pageKey,
+                  opaque: false,
+                  barrierColor: Colors.transparent,
+                  child: ChatDetails(
+                    type: state.pathParameters['type']!,
+                    roomId: state.pathParameters['roomId']!,
+                    title: state.pathParameters['title']!,
+                  ),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  transitionsBuilder: (context, animation, secondAnimation, child) {
+                    final tween = Tween(begin: const Offset(1, 0), end: Offset.zero).chain(
+                        CurveTween(curve: Curves.easeOut));
+                    return SlideTransition(
+                      position: animation.drive(tween),
+                      child: child,
+                    );
+                  }
+              )
       ),
       GoRoute(name: 'LoginPage', path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(name: 'RegisterPage', path: '/register', builder: (context, state) => const RegisterScreen()),

@@ -1,5 +1,5 @@
-import 'package:chatme/ui/components/edge_aware_glow_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -7,24 +7,17 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 20,
-            children: <Widget>[
-              ...List.generate(
-                2,
-                (_) =>  EdgeAwareGlowImage(
-                  image: NetworkImage('https://picsum.photos/seed/picsum/1200/800'),
-                  size: Size(MediaQuery.of(context).size.width, 220),
-                  borderRadius: 0.0,
-                ),
-              ).expand((w) sync* {
-                yield w;
-                yield const SizedBox(height: 25);
-              }).toList()..removeLast(),
-            ],
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          period: const Duration(milliseconds: 1000),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.grey.shade300, // quan trọng nè!
           ),
         ),
       ),

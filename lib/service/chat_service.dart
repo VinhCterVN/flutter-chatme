@@ -16,15 +16,14 @@ class ChatService {
   ChatService(this._firestore);
 
   Stream<List<Chat>> streamChatList(WidgetRef ref) {
+    final userService = ref.read(userServiceProvider);
+    final currentUser = FirebaseAuth.instance.currentUser!;
     return _firestore
         .collection('chats')
         .where('participants', arrayContains: FirebaseAuth.instance.currentUser!.uid)
         .orderBy('lastMsgTime', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
-          final userService = ref.read(userServiceProvider);
-          final currentUser = FirebaseAuth.instance.currentUser!;
-
           final chats = await Future.wait(
             snapshot.docs.map((d) async {
               final data = d.data();
@@ -47,6 +46,7 @@ class ChatService {
                 groupName: groupName,
                 groupAvatarUrl: data['groupAvatarUrl'] as String?,
                 lastMsg: data['lastMsg'] as String?,
+                lastMsgSenderId: data['lastMsgSenderId'] as String?,
                 lastMsgTime: data['lastMsgTime'] as Timestamp?,
                 createdAt: data['createdAt'] as Timestamp,
               );
@@ -145,7 +145,11 @@ class ChatService {
         'content': content,
         'timestamp': timestamp,
       });
-      await _firestore.collection('chats').doc(roomId).update({'lastMsg': content, 'lastMsgTime': timestamp});
+      await _firestore.collection('chats').doc(roomId).update({
+        'lastMsg': content,
+        'lastMsgSenderId': senderId,
+        'lastMsgTime': timestamp,
+      });
     } catch (e) {
       log('Error sending message: $e');
     }

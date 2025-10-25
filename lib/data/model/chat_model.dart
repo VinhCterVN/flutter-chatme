@@ -8,6 +8,7 @@ class Chat {
   final List<String> participants;
   List<ChatMember>? groupMembers;
   final String? lastMsg;
+  final String? lastMsgSenderId;
   final Timestamp? lastMsgTime;
   final String? groupName;
   final String? groupAvatarUrl;
@@ -19,17 +20,12 @@ class Chat {
     required this.participants,
     this.groupMembers,
     this.lastMsg,
+    this.lastMsgSenderId,
     this.lastMsgTime,
     this.groupName,
     this.groupAvatarUrl,
     required this.createdAt,
   });
-
-  void setGroupMembers(List<ChatMember> members) {
-    if (type == ChatType.group) {
-      groupMembers = members;
-    }
-  }
 }
 
 class GroupParticipant {

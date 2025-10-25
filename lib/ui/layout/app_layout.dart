@@ -25,6 +25,14 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authService = ref.watch(authenticationServiceProvider);
     final currentIndex = widget.navigationShell.currentIndex;
@@ -66,6 +74,7 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
         ),
       ),
       endDrawer: const AppDrawer(),
+      endDrawerEnableOpenDragGesture: true,
       drawerEnableOpenDragGesture: true,
       extendBodyBehindAppBar: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -81,7 +90,7 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
             icon: Icon(route['icon'] as IconData),
             activeIcon: Icon(route['active_icon'] as IconData),
             label: route['name'] as String,
-            tooltip: route['name'] as String
+            tooltip: route['name'] as String,
           );
         }).toList(),
       ),

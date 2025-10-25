@@ -12,8 +12,14 @@ import '../../../data/model/ui_state.dart';
 class SliverMessagesView extends ConsumerStatefulWidget {
   final String roomId;
   final List<ChatMember> _members;
+  final ScrollController scrollController;
 
-  const SliverMessagesView({super.key, required this.roomId, required List<ChatMember> members}) : _members = members;
+  const SliverMessagesView({
+    super.key,
+    required this.roomId,
+    required this.scrollController,
+    required List<ChatMember> members,
+  }) : _members = members;
 
   @override
   ConsumerState<SliverMessagesView> createState() => _SliverMessagesViewState();
@@ -21,46 +27,41 @@ class SliverMessagesView extends ConsumerStatefulWidget {
 
 class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
   final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
-  late final ScrollController _scrollController;
   List<ChatMessage> _messages = [];
   UIState _uiState = UIState.loading;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
-    ref.listenManual(
-      messagesStreamProvider(widget.roomId),
-      (previous, next) {
-        next.when(
-          data: (newMsgs) {
-            if (newMsgs.length > _messages.length) {
-              final diff = newMsgs.length - _messages.length;
-              setState(() {
-                _messages = newMsgs;
-                _uiState = UIState.ready;
-              });
-              for (int i = 0; i < diff; i++) {
-                _listKey.currentState?.insertItem(0);
-              }
-            } else {
-              setState(() {
-                _messages = newMsgs;
-                _uiState = UIState.ready;
-              });
+    ref.listenManual(messagesStreamProvider(widget.roomId), (previous, next) {
+      next.when(
+        data: (newMsgs) {
+          if (newMsgs.length > _messages.length) {
+            final diff = newMsgs.length - _messages.length;
+            setState(() {
+              _messages = newMsgs;
+              _uiState = UIState.ready;
+            });
+            for (int i = 0; i < diff; i++) {
+              _listKey.currentState?.insertItem(0);
             }
-          },
-          loading: () => setState(() => _uiState = UIState.loading),
-          error: (e, s) => setState(() => _uiState = UIState.error),
-        );
-      }
-    );
+          } else {
+            setState(() {
+              _messages = newMsgs;
+              _uiState = UIState.ready;
+            });
+          }
+        },
+        loading: () => setState(() => _uiState = UIState.loading),
+        error: (e, s) => setState(() => _uiState = UIState.error),
+      );
+    });
     Future.delayed(const Duration(seconds: 1), () => setState(() => _uiState = UIState.ready));
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    widget.scrollController.dispose();
     super.dispose();
   }
 
@@ -122,6 +123,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
       UIState.error => const Text('Error loading messages.'),
       UIState.ready => CustomScrollView(
         reverse: true,
+        controller: widget.scrollController,
         slivers: [
           if (_messages.isEmpty)
             SliverFillRemaining(

@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatme/ui/components/common/shimmer_box.dart';
 import 'package:flutter/material.dart';
 
 class StoryCarousel extends StatelessWidget {
@@ -13,23 +15,30 @@ class StoryCarousel extends StatelessWidget {
         elevation: 2,
         itemSnapping: true,
         consumeMaxWeight: false,
-        children: List<Widget>.generate(20, (index) {
+        children: List<Widget>.generate(40, (index) {
           return Stack(
             children: [
-              Positioned.fill(child: Image.network("https://i.pravatar.cc/300?img=$index", fit: BoxFit.cover)),
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl: "https://i.pravatar.cc/400?img=$index",
+                  fit: BoxFit.cover,
+                  fadeInCurve: Curves.easeOut,
+                  placeholder: (context, url) => ShimmerBox(),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
+                ),
+              ),
               Positioned.fill(
                 child: Column(
                   verticalDirection: VerticalDirection.up,
                   children: [
                     Container(
-                      //
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
-                          colors: [Colors.black.withAlpha((0.7 * 255).toInt()), Colors.transparent],
+                          colors: [Colors.black.withAlpha((0.5 * 255).toInt()), Colors.transparent],
                         ),
                       ),
                       child: Text(
