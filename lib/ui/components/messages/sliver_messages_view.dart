@@ -24,30 +24,42 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
   late final ScrollController _scrollController;
   List<ChatMessage> _messages = [];
   UIState _uiState = UIState.loading;
-  StreamSubscription<List<ChatMessage>>? _sub;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    final chatService = ref.read(chatServiceProvider);
-    _sub = chatService.streamMessages(widget.roomId).listen((newMsgs) {
-      if (newMsgs.length > _messages.length) {
-        final diff = newMsgs.length - _messages.length;
-        setState(() => _messages = newMsgs);
-        for (int i = 0; i < diff; i++) {
-          _listKey.currentState?.insertItem(0);
-        }
-      } else {
-        setState(() => _messages = newMsgs);
+    ref.listenManual(
+      messagesStreamProvider(widget.roomId),
+      (previous, next) {
+        next.when(
+          data: (newMsgs) {
+            if (newMsgs.length > _messages.length) {
+              final diff = newMsgs.length - _messages.length;
+              setState(() {
+                _messages = newMsgs;
+                _uiState = UIState.ready;
+              });
+              for (int i = 0; i < diff; i++) {
+                _listKey.currentState?.insertItem(0);
+              }
+            } else {
+              setState(() {
+                _messages = newMsgs;
+                _uiState = UIState.ready;
+              });
+            }
+          },
+          loading: () => setState(() => _uiState = UIState.loading),
+          error: (e, s) => setState(() => _uiState = UIState.error),
+        );
       }
-    });
+    );
     Future.delayed(const Duration(seconds: 1), () => setState(() => _uiState = UIState.ready));
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -132,6 +144,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                 final isMine = msg.senderId == currentUser!.uid;
                 final first = _isFirstInGroup(index);
                 final last = _isLastInGroup(index);
+                final diff = DateTime.now().difference(msg.timestamp.toDate());
 
                 return SizeTransition(
                   sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
@@ -142,6 +155,17 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                       crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
                         if (first) const SizedBox(height: 8),
+                        if (first && index != 0 && diff.inHours > 1)
+                          Align(
+                            alignment: AlignmentGeometry.center,
+                            child: Text(
+                              _formatMessageTime(msg.timestamp.toDate()),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
+                              ),
+                            ),
+                          ),
 
                         Align(
                           alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -150,7 +174,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                             decoration: BoxDecoration(
-                              color: isMine
+                              color: !isMine
                                   ? Theme.of(context).colorScheme.secondaryContainer
                                   : Theme.of(context).colorScheme.primaryContainer,
                               borderRadius: BorderRadius.only(
@@ -171,25 +195,13 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                               ),
                               style: TextStyle(
                                 fontSize: 15,
-                                color: isMine
+                                color: !isMine
                                     ? Theme.of(context).colorScheme.onSecondaryContainer
                                     : Theme.of(context).colorScheme.onPrimaryContainer,
                               ),
                             ),
                           ),
                         ),
-
-                        if (last && index != 0)
-                          Align(
-                            alignment: AlignmentGeometry.center,
-                            child: Text(
-                              _formatMessageTime(msg.timestamp.toDate()),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -222,7 +234,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                 ),
               ),
             ),
-            SliverToBoxAdapter(child: SizedBox(height: 100)),
+            SliverToBoxAdapter(child: SizedBox(height: 150)),
           ],
         ],
       ),

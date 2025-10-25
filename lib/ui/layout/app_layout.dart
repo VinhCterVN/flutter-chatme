@@ -81,6 +81,7 @@ class _AppLayoutState extends ConsumerState<AppLayout> {
             icon: Icon(route['icon'] as IconData),
             activeIcon: Icon(route['active_icon'] as IconData),
             label: route['name'] as String,
+            tooltip: route['name'] as String
           );
         }).toList(),
       ),

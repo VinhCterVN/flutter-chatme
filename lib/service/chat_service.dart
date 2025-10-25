@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:chatme/data/model/chat_model.dart';
+import 'package:chatme/provider/user_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum ChatType { private, group }
 
@@ -13,23 +15,54 @@ class ChatService {
 
   ChatService(this._firestore);
 
-  Stream<List<Chat>> streamChatList() {
-    return _firestore.collection('chats')
+  Stream<List<Chat>> streamChatList(WidgetRef ref) {
+    return _firestore
+        .collection('chats')
         .where('participants', arrayContains: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('lastMsgTime', descending: true).snapshots().map((snapshot) {
-      return snapshot.docs.map((d) {
-        final data = d.data();
-        return Chat(
-          id: d.id,
-          type: data['type'] == ChatType.private.name ? ChatType.private : ChatType.group,
-          participants: List<String>.from(data['participants'] as List<dynamic>),
-          groupName: data['groupName'] as String?,
-          lastMsg: data['lastMsg'] as String?,
-          lastMsgTime: data['lastMsgTime'] as Timestamp?,
-          createdAt: data['createdAt'] as Timestamp,
-        );
-      }).toList();
-    });
+        .orderBy('lastMsgTime', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final userService = ref.read(userServiceProvider);
+          final currentUser = FirebaseAuth.instance.currentUser!;
+
+          final chats = await Future.wait(
+            snapshot.docs.map((d) async {
+              final data = d.data();
+              final type = data['type'] == ChatType.private.name ? ChatType.private : ChatType.group;
+
+              final participants = List<String>.from(data['participants'] as List<dynamic>);
+              String? groupName;
+
+              if (type == ChatType.private) {
+                final users = await userService.getUsersByIds(participants);
+                groupName = users.firstWhere((u) => u.uid != currentUser.uid).displayName;
+              } else {
+                groupName = data['groupName'] as String?;
+              }
+
+              return Chat(
+                id: d.id,
+                type: type,
+                participants: participants,
+                groupName: groupName,
+                groupAvatarUrl: data['groupAvatarUrl'] as String?,
+                lastMsg: data['lastMsg'] as String?,
+                lastMsgTime: data['lastMsgTime'] as Timestamp?,
+                createdAt: data['createdAt'] as Timestamp,
+              );
+            }).toList(),
+          );
+
+          return chats;
+        });
+  }
+
+  Future<String> _getPrivateGroupName(List<String> participants, WidgetRef ref) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userService = ref.read(userServiceProvider);
+
+    final users = await userService.getUsersByIds(participants);
+    return users.firstWhere((e) => e.uid != user?.uid).displayName;
   }
 
   Future<dynamic> getOrCreatePrivate({required String uuidA, required String uuidB}) async {
@@ -70,6 +103,8 @@ class ChatService {
         id: doc.id,
         type: chatData['type'] == ChatType.private.name ? ChatType.private : ChatType.group,
         participants: List<String>.from(chatData['participants'] as List<dynamic>),
+        groupName: chatData['groupName'] as String?,
+        groupAvatarUrl: chatData['groupAvatarUrl'] as String?,
         createdAt: chatData['createdAt'] as Timestamp,
       );
     } catch (e) {
@@ -104,7 +139,7 @@ class ChatService {
 
   Future<void> sendMessage(String roomId, String senderId, String content) async {
     try {
-      final timestamp = FieldValue.serverTimestamp();
+      final timestamp = Timestamp.now();
       await _firestore.collection('chats').doc(roomId).collection('messages').add({
         'senderId': senderId,
         'content': content,
@@ -123,8 +158,8 @@ class ChatService {
         .collection('messages')
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
             final data = doc.data();
             return ChatMessage(
               id: doc.id,
@@ -132,8 +167,8 @@ class ChatService {
               content: data['content'] as String,
               timestamp: (data['timestamp'] as Timestamp),
             );
-          }).toList();
-        });
+          }).toList(),
+        );
   }
 
   String makePairKey(String a, String b) {

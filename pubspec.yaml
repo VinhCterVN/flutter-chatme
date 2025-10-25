@@ -33,6 +33,12 @@ dependencies:
 
 #  Crypto
   crypto: ^3.0.6
+  scale_button: ^2.1.2
+
+#  Cloudinary
+  cloudinary_flutter: ^1.0.0
+  cloudinary_url_gen: ^1.0.0
+  cloudinary_api: ^1.0.0
 
 dev_dependencies:
   flutter_test:

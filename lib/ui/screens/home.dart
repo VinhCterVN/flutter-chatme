@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:chatme/helper/snack_bar.dart';
+import 'package:chatme/ui/components/home/notes_carousel.dart';
+import 'package:chatme/ui/components/home/story_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,7 +31,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     _scrollController = ScrollController();
 
     final chatService = ref.read(chatServiceProvider);
-    _sub = chatService.streamChatList().listen((newChats) {
+    _sub = chatService.streamChatList(ref).listen((newChats) {
       setState(() => _chats = newChats);
     });
 
@@ -56,10 +58,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             pinned: true,
             delegate: _SearchBarDelegate(onChanged: (value) => setState(() {}), chats: _chats),
           ),
+          SliverToBoxAdapter(child: NotesCarousel()),
+          SliverToBoxAdapter(child: StoryCarousel()),
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               final chat = _chats[index];
-
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
                 child: ChatTile(chat: chat, index: index),
