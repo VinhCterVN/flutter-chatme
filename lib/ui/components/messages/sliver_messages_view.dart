@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatme/data/model/chat_model.dart';
 import 'package:chatme/provider/auth_provider.dart';
 import 'package:chatme/provider/chat_provider.dart';
@@ -13,6 +14,7 @@ class SliverMessagesView extends ConsumerStatefulWidget {
   final String roomId;
   final List<ChatMember> _members;
   final ScrollController scrollController;
+  final placeholder = "https://res.cloudinary.com/dtf1ao1ds/image/upload/v1763193685/avatar_pp44af.png";
 
   const SliverMessagesView({
     super.key,
@@ -74,7 +76,14 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
     final currentTime = current.timestamp.toDate();
     final nextTime = next.timestamp.toDate();
 
-    return current.senderId != next.senderId || currentTime.difference(nextTime).inMinutes > 5;
+    if (current.senderId != next.senderId) return true;
+
+    final now = DateTime.now();
+    if (now.difference(currentTime).inDays >= 14) {
+      return !_isSameDay(currentTime, nextTime);
+    }
+
+    return currentTime.difference(nextTime).inMinutes > 5;
   }
 
   bool _isLastInGroup(int index) {
@@ -86,7 +95,61 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
     final currentTime = current.timestamp.toDate();
     final prevTime = prev.timestamp.toDate();
 
-    return current.senderId != prev.senderId || prevTime.difference(currentTime).inMinutes > 5;
+    if (current.senderId != prev.senderId) return true;
+
+    final now = DateTime.now();
+    if (now.difference(currentTime).inDays >= 14) {
+      return !_isSameDay(currentTime, prevTime);
+    }
+
+    return prevTime.difference(currentTime).inMinutes > 5;
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+  }
+
+  String _getTimeCategory(DateTime messageTime) {
+    final now = DateTime.now();
+    final difference = now.difference(messageTime);
+
+    if (difference.inMinutes < 30) {
+      return "Last 30 minutes";
+    } else if (difference.inHours < 1) {
+      return "Last hour";
+    } else if (difference.inHours < 2) {
+      return "Last 2 hours";
+    } else if (difference.inDays < 1) {
+      return "Today";
+    } else if (difference.inDays < 3) {
+      return "Last 3 days";
+    } else if (difference.inDays < 7) {
+      return "Last 7 days";
+    } else if (difference.inDays < 30) {
+      return "Last month";
+    } else {
+      return _formatSpecificDate(messageTime);
+    }
+  }
+
+  String _formatSpecificDate(DateTime date) {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+    return "${months[date.month - 1]} ${date.day}, ${date.year}";
+  }
+
+  bool _shouldShowTimeHeader(int index) {
+    if (index == _messages.length - 1) return true;
+
+    final current = _messages[index];
+    final next = _messages[index + 1];
+
+    final currentCategory = _getTimeCategory(current.timestamp.toDate());
+    final nextCategory = _getTimeCategory(next.timestamp.toDate());
+
+    return currentCategory != nextCategory;
   }
 
   String _formatMessageTime(DateTime time) {
@@ -110,13 +173,14 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
     } else if (isThisYear) {
       return "${time.day}/${time.month}, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
     } else {
-      return "${time.day}/${time.month}/${time.year}, ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+      return "${time.day}/${time.month}/${time.year} at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return switch (_uiState) {
       UIState.loading => const Center(child: CircularProgressIndicator()),
@@ -146,7 +210,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                 final isMine = msg.senderId == currentUser!.uid;
                 final first = _isFirstInGroup(index);
                 final last = _isLastInGroup(index);
-                final diff = DateTime.now().difference(msg.timestamp.toDate());
+                final showTimeHeader = _shouldShowTimeHeader(index);
 
                 return SizeTransition(
                   sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
@@ -156,10 +220,33 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                     child: Column(
                       crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
+                        if (showTimeHeader) ...[
+                          const SizedBox(height: 16),
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(150),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                _getTimeCategory(msg.timestamp.toDate()),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         if (first) const SizedBox(height: 8),
-                        if (first && index != 0 && diff.inHours > 1)
+
+                        if (first && index != 0 && DateTime.now().difference(msg.timestamp.toDate()).inHours > 1)
                           Align(
-                            alignment: AlignmentGeometry.center,
+                            alignment: Alignment.center,
                             child: Text(
                               _formatMessageTime(msg.timestamp.toDate()),
                               style: TextStyle(
@@ -186,7 +273,7 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                                 bottomRight: Radius.circular(isMine ? (last ? 18 : 6) : 18),
                               ),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 4, offset: const Offset(0, 2)),
+                                BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 1, offset: const Offset(0, 1)),
                               ],
                             ),
                             child: Text(
@@ -225,7 +312,14 @@ class _SliverMessagesViewState extends ConsumerState<SliverMessagesView> {
                           BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8, offset: const Offset(0, 4)),
                         ],
                       ),
-                      child: ClipOval(child: Image.asset('assets/images/avatar.png', fit: BoxFit.cover)),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: widget._members.isEmpty
+                              ? widget.placeholder
+                              : widget._members.firstWhere((e) => e.userId != currentUser?.uid).photoUrl,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(

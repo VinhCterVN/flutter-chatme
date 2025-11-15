@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatme/service/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -58,11 +59,12 @@ class AuthenticationService {
       }
       await user.updateDisplayName(displayName.trim());
       await user.reload();
-      final updatedUser = _firebaseAuth.currentUser;
-      if (updatedUser?.displayName == displayName.trim()) {
+      final updatedUser = _firebaseAuth.currentUser!;
+      await saveUserData(updatedUser);
+      if (updatedUser.displayName == displayName.trim()) {
         return null; // Success
       } else {
-        log("DisplayName update failed. Current displayName: ${updatedUser?.displayName}");
+        log("DisplayName update failed. Current displayName: ${updatedUser.displayName}");
         return 'Failed to update displayName.';
       }
     } on FirebaseAuthException catch (e) {
@@ -90,16 +92,24 @@ class AuthenticationService {
 
   Future<String?> saveUserData(User user) async {
     try {
-      final userRef = FirebaseFirestore.instance.collection('users');
-      await userRef.doc(user.uid).set({
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final docSnapshot = await userRef.get();
+
+      final data = {
         'uid': user.uid,
         'email': user.email,
         'displayName': user.displayName ?? '',
         'photoUrl': user.photoURL ?? '',
+        'fcmToken': NotificationService.fcmToken,
         'emailVerified': user.emailVerified,
         'lastActive': FieldValue.serverTimestamp(),
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      };
+
+      if (!docSnapshot.exists) {
+        data['createdAt'] = FieldValue.serverTimestamp();
+      }
+
+      await userRef.set(data, SetOptions(merge: true));
       return null;
     } catch (e) {
       log("Error saving user data: $e");

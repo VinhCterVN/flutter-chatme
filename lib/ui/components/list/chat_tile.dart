@@ -13,8 +13,9 @@ import '../../../service/chat_service.dart';
 class ChatTile extends ConsumerStatefulWidget {
   final Chat chat;
   final int? index;
+  final Function? onClick;
 
-  const ChatTile({super.key, required this.chat, this.index});
+  const ChatTile({super.key, required this.chat, this.index, this.onClick});
 
   @override
   ConsumerState<ChatTile> createState() => _ChatTileState();
@@ -29,6 +30,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
     return ListTile(
       onTap: () async {
         if (!context.mounted) return;
+        if (widget.onClick != null) widget.onClick!();
         context.pushNamed(
           'ChatDetails',
           pathParameters: {
@@ -44,7 +46,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
         isScrollControlled: true,
         showDragHandle: true,
         barrierColor: Colors.black54,
-        builder: (context) => const ChatTileSheet()
+        builder: (context) => const ChatTileSheet(),
       ),
       leading: CircleAvatar(
         backgroundImage: CachedNetworkImageProvider(

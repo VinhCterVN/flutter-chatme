@@ -57,14 +57,6 @@ class ChatService {
         });
   }
 
-  Future<String> _getPrivateGroupName(List<String> participants, WidgetRef ref) async {
-    final user = FirebaseAuth.instance.currentUser;
-    final userService = ref.read(userServiceProvider);
-
-    final users = await userService.getUsersByIds(participants);
-    return users.firstWhere((e) => e.uid != user?.uid).displayName;
-  }
-
   Future<dynamic> getOrCreatePrivate({required String uuidA, required String uuidB}) async {
     final roomId = makePairKey(uuidA, uuidB);
     try {

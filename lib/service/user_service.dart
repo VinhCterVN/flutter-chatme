@@ -30,7 +30,7 @@ class UserService {
         uid: doc.id,
         displayName: data['displayName'] ?? '',
         email: data['email'] ?? '',
-        photoUrl: data['photoUrl'] ?? '',
+        photoUrl: data['photoUrl'],
       );
     } catch (e) {
       log('Error fetching user info: $e');

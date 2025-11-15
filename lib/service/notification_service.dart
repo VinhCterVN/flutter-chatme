@@ -1,44 +1,83 @@
-import 'dart:convert';
-import 'dart:developer';
+import 'dart:developer' as developer;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+  static String? fcmToken;
 
   static Future<void> init() async {
+    developer.log('Initializing NotificationService...', name: 'FCM');
+
     FirebaseMessaging messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission();
 
+    // Request permission
+    NotificationSettings settings = await messaging.requestPermission();
+    developer.log('Permission status: ${settings.authorizationStatus}', name: 'FCM');
+
+    // Get token
     final token = await messaging.getToken();
-    log("FCM Token: $token");
+    fcmToken = token;
+    developer.log("FCM Token: $token", name: 'FCM');
 
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Initialize local notifications
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initSettings =
+        InitializationSettings(android: androidSettings);
 
-    const InitializationSettings initSettings = InitializationSettings(android: androidSettings);
+    final bool? initialized = await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        developer.log('Notification tapped: ${details.payload}', name: 'FCM');
+      },
+    );
 
-    await _localNotifications.initialize(initSettings);
+    developer.log('Local notifications initialized: $initialized', name: 'FCM');
   }
 
   static Future<void> showNotification(RemoteMessage message) async {
-    log(jsonEncode(message));
+    developer.log('--- Showing Notification ---', name: 'FCM');
+    developer.log('Message ID: ${message.messageId}', name: 'FCM');
+    developer.log('Data: ${message.data}', name: 'FCM');
+    developer.log('Title: ${message.notification?.title}', name: 'FCM');
+    developer.log('Body: ${message.notification?.body}', name: 'FCM');
+
+    // Debug print có màu sắc
+    if (kDebugMode) {
+      print('🔔 === FCM Notification ===');
+      print('📋 Title: ${message.notification?.title ?? 'No Title'}');
+      print('📝 Body: ${message.notification?.body ?? 'No body'}');
+      print('📦 Data: ${message.data}');
+      print('========================');
+    }
+
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'default_channel',
       'General Notifications',
+      channelDescription: 'General app notifications',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
-
     );
 
-    const NotificationDetails generalNotificationDetails = NotificationDetails(android: androidDetails);
+    const NotificationDetails generalNotificationDetails =
+        NotificationDetails(android: androidDetails);
 
-    await _localNotifications.show(
-      message.hashCode,
-      message.notification?.title ?? 'No Title',
-      message.notification?.body ?? 'No body',
-      generalNotificationDetails,
-    );
+    try {
+      await _localNotifications.show(
+        message.hashCode,
+        message.notification?.title ?? 'No Title',
+        message.notification?.body ?? 'No body',
+        generalNotificationDetails,
+        payload: message.data.toString(),
+      );
+      developer.log('✅ Notification shown successfully', name: 'FCM');
+    } catch (e) {
+      developer.log('❌ Error showing notification: $e', name: 'FCM', error: e);
+    }
   }
 }
